@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Selektor WebRadio Cast Receiver</title>
+  <script type="text/javascript"
+      src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js">
+  </script>
+  <style>
+    body {
+      background-color: #000;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    cast-media-player {
+      --background-image: none;
+      --logo-image: none;
+      --playback-logo-image: none;
+      --theme-hue: 210;
+      --progress-color: #1DB954;
+      --splash-color: #1a1a2e;
+      --splash-size: 100%;
+    }
+  </style>
+</head>
+<body>
+  <cast-media-player></cast-media-player>
+  <script>
+    const context = cast.framework.CastReceiverContext.getInstance();
+    const playerManager = context.getPlayerManager();
+
+    // Log media events for debugging
+    playerManager.addEventListener(
+      cast.framework.events.EventType.ERROR, (event) => {
+        console.log('CAST ERROR:', JSON.stringify(event));
+      }
+    );
+
+    playerManager.addEventListener(
+      cast.framework.events.EventType.MEDIA_STATUS, (event) => {
+        console.log('MEDIA STATUS:', event.mediaStatus?.playerState);
+      }
+    );
+
+    // Intercept LOAD requests to ensure proper handling of live audio streams
+    playerManager.setMessageInterceptor(
+      cast.framework.messages.MessageType.LOAD, (loadRequestData) => {
+        console.log('LOAD REQUEST:', JSON.stringify(loadRequestData.media));
+
+        // Force live stream type for radio streams
+        if (loadRequestData.media) {
+          loadRequestData.media.streamType =
+            cast.framework.messages.StreamType.LIVE;
+
+          // Ensure content type is set
+          if (!loadRequestData.media.contentType) {
+            loadRequestData.media.contentType = 'audio/mpeg';
+          }
+        }
+
+        return loadRequestData;
+      }
+    );
+
+    // Configure playback to handle live audio streams
+    const playbackConfig = new cast.framework.PlaybackConfig();
+    playbackConfig.autoResumeDuration = 5;
+
+    // Start the receiver
+    context.start({ playbackConfig: playbackConfig });
+    console.log('Selektor Cast Receiver started');
+  </script>
+</body>
+</html>
